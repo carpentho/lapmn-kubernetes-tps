@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f ../docker/docker-compose.yml --controller deployment
+    kompose.version: 1.22.0 (955b78124)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: app
+  name: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: app
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f ../docker/docker-compose.yml --controller deployment
+        kompose.version: 1.22.0 (955b78124)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/nextcloud_net: "true"
+        io.kompose.service: app
+    spec:
+      containers:
+        - env:
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: credential
+                  key: DATABASE
+            - name: MYSQL_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: credential
+                  key: HOSTNAME
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: credential
+                  key: PASSWORD
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: credential
+                  key: USERNAME
+          image: nextcloud
+          name: app
+          ports:
+            - containerPort: 80
+          resources: {}
+          volumeMounts:
+            - mountPath: /var/www/html
+              name: nextcloud-data
+      restartPolicy: Always
+      volumes:
+        - name: nextcloud-data
+          persistentVolumeClaim:
+            claimName: nextcloud-data
+status: {}
